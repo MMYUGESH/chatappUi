@@ -1,23 +1,71 @@
-import logo from './logo.svg';
+import React, { useState, useEffect } from 'react'
 import './App.css';
+import { Button, FormControl, InputLabel, Input } from '@material-ui/core';
+import Message from './Message';
+import { db } from './firebase';
+import firebase from 'firebase';
+import FlipMove from 'react-flip-move';
+import SendIcon from '@material-ui/icons/Send';
+import IconButton from '@material-ui/core/IconButton';
 
 function App() {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+
+    db.collection("messages").orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, message: doc.data() })));
+    })
+
+  }, [])
+
+
+  useEffect(() => {
+
+    setUsername(prompt('please enter your username'));
+
+  }, []);
+
+  const sendMessage = (event) => {
+    event.preventDefault();
+
+    db.collection("messages").add({
+      message: input,
+      username: username,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    setInput("")
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <div className="heading">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOQdpMYApOsy0AtarQWCmPFhp-UlrPMH4z5JO_izRUdjY44ywd4TwE1G_k1XrJDbXMdrI&usqp=CAU"></img>
+      </div>
+      <h2>welcome {username}</h2>
+      <form className="app_form">
+        <FormControl className="app_formControl">
+          <InputLabel>Enter Message</InputLabel>
+          <Input className="app_input" value={input} onChange={event => setInput(event.target.value)} />
+          <IconButton className="app_iconButton" type="submit" color="secondary" variant="contained" disabled={!input} onClick={sendMessage}>
+            <SendIcon />
+          </IconButton>
+
+        </FormControl>
+      </form>
+      <FlipMove>
+        {messages.map(({ id, message }) => (
+
+          <Message key={id} username={username} message={message} />
+
+        ))
+
+
+        }
+      </FlipMove>
+
     </div>
   );
 }
